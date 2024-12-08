@@ -27,7 +27,14 @@ void ReceiveFromChild() {
     CloseHandle(hEventD);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        std::cerr << "Parent: Delay parameter missing." << std::endl;
+        return 1;
+    }
+
+    int delayMs = std::stoi(argv[1]);
+
     HANDLE hSemaphore = OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, TEXT("ParentSyncSemaphore"));
     HANDLE hEventA = OpenEvent(EVENT_MODIFY_STATE, FALSE, TEXT("EventA"));
     HANDLE hEventB = OpenEvent(EVENT_MODIFY_STATE, FALSE, TEXT("EventB"));
@@ -38,9 +45,14 @@ int main() {
         return 1;
     }
 
+    // Получаем количество сообщений
+    int messageCount;
+    std::cout << "Enter the number of messages to send: ";
+    std::cin >> messageCount;
+
     std::thread receiverThread(ReceiveFromChild);
 
-    for (int i = 0; i < 1; ++i) {
+    for (int i = 0; i < messageCount; ++i) {
         WaitForSingleObject(hSemaphore, INFINITE);
         std::cout << "Activ: Parent acquired semaphore." << std::endl;
 
@@ -56,6 +68,9 @@ int main() {
         }
 
         ReleaseSemaphore(hSemaphore, 1, NULL);
+
+        // Задержка перед отправкой следующего события
+        std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
     }
 
     SetEvent(hEventParentDone);

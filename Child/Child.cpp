@@ -30,7 +30,14 @@ void ReceiveFromParent() {
     CloseHandle(hEventB);
 }
 
-int main() {
+int main(int argc, char* argv[]) {
+    if (argc < 2) {
+        std::cerr << "Child: Delay parameter missing." << std::endl;
+        return 1;
+    }
+
+    int delayMs = std::stoi(argv[1]);
+
     HANDLE hMutex = OpenMutex(MUTEX_ALL_ACCESS, FALSE, TEXT("ChildSyncMutex"));
     HANDLE hEventC = OpenEvent(EVENT_MODIFY_STATE, FALSE, TEXT("EventC"));
     HANDLE hEventD = OpenEvent(EVENT_MODIFY_STATE, FALSE, TEXT("EventD"));
@@ -41,9 +48,14 @@ int main() {
         return 1;
     }
 
+    // Получаем количество сообщений
+    int messageCount;
+    std::cout << "Enter the number of messages to send: ";
+    std::cin >> messageCount;
+
     std::thread receiverThread(ReceiveFromParent);
 
-    for (int i = 0; i < 1; ++i) {
+    for (int i = 0; i < messageCount; ++i) {
         WaitForSingleObject(hMutex, INFINITE);
         std::cout << "Activ: Child acquired mutex." << std::endl;
 
@@ -59,6 +71,9 @@ int main() {
         }
 
         ReleaseMutex(hMutex);
+
+        // Задержка перед отправкой следующего события
+        std::this_thread::sleep_for(std::chrono::milliseconds(delayMs));
     }
 
     running = false; // Завершение потока

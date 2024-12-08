@@ -2,6 +2,8 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <chrono>
+#include <thread>
 
 int main() {
     // Создание синхронизационных объектов
@@ -26,12 +28,19 @@ int main() {
     std::cout << "Enter number of Child processes: ";
     std::cin >> childCount;
 
+    int delayMs;
+    std::cout << "Enter delay in milliseconds between events: ";
+    std::cin >> delayMs;
+
+    // Формируем команду для запуска Parent и Child процессов
+    std::string delayArg = std::to_string(delayMs);
+
     // Запуск процессов Parent
     std::vector<HANDLE> parentProcesses;
     for (int i = 0; i < parentCount; ++i) {
         STARTUPINFO si = { sizeof(si) };
         PROCESS_INFORMATION pi;
-        std::wstring command = L"Parent.exe";
+        std::wstring command = L"Parent.exe " + std::wstring(delayArg.begin(), delayArg.end());
         if (CreateProcess(NULL, &command[0], NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi)) {
             parentProcesses.push_back(pi.hProcess);
             CloseHandle(pi.hThread);
@@ -46,7 +55,7 @@ int main() {
     for (int i = 0; i < childCount; ++i) {
         STARTUPINFO si = { sizeof(si) };
         PROCESS_INFORMATION pi;
-        std::wstring command = L"Child.exe";
+        std::wstring command = L"Child.exe " + std::wstring(delayArg.begin(), delayArg.end());
         if (CreateProcess(NULL, &command[0], NULL, NULL, FALSE, CREATE_NEW_CONSOLE, NULL, NULL, &si, &pi)) {
             childProcesses.push_back(pi.hProcess);
             CloseHandle(pi.hThread);
